@@ -42,6 +42,4 @@ pipeline {
                 expression {choice  == 3}
             }
             steps {
-                sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=chatapp -Dsonar.host.url=http://44.209.72.171:9000 -Dsonar.login=sqp_79cac47b2d73950e2f9dd1902458f4a2425aa8a2'
-            }
- }
+                sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=chatapp -Dsonar.host.url=http://44.209.72.171:9000 -Dsonar.login=sqp_79cac47b2d73950e2f9dd1902458f4a24 }
