@@ -7,39 +7,32 @@ pipeline {
     }
 
     stages {
-        stage('Poll From SCM') {
+        stage('Git Pull and Build') {
             steps {
                 // Get some code from a GitHub repository
                 git credentialsId: 'git_token', url: 'git@github.com:sri-shenoyk/Jenkins_springboot_chat_app.git'
+
+                // Run Maven on a Unix agent.
+                sh "mvn -Dmaven.test.failure.ignore=true clean package"
+
+                // To run Maven on a Windows agent, use
+                // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+            }
+
+            post {
+                // If Maven was able to run the tests, even if some of the test
+                // failed, record the test results and archive the jar file.
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts 'target/*.jar'
+                }
             }
         }
-        stage('Mvn Build'){
-            steps {
-                sh 'mvn -B -DskipTests clean package'
-            }
-        }
-        stage('Unit Test'){
+        stage('ansible'){
             steps{
-                sh 'mvn test'
-                junit 'target/surefire-reports/*.xml'
+                git credentialsId: 'git_token', url: 'git@github.com:sri-shenoyk/tomcat_playbook.git'
+                ansiblePlaybook credentialsId: 'git_token2', disableHostKeyChecking: true, inventory: 'dev.inv', playbook: 'tomcat.yml'
             }
         }
-        stage('CheckStye Test') {
-            steps {
-                sh 'mvn checkstyle:checkstyle'
-                recordIssues(tools: [checkStyle(pattern: '**/checkstyle-result.xml')])
-            }
-        }
-        
-        stage('Nexus Uploader'){
-            steps{
-                nexusArtifactUploader artifacts: [[artifactId: 'websocket-demo', classifier: '', file: 'target/websocket-demo-0.0.1-SNAPSHOT.jar', type: 'jar']], credentialsId: 'nexus-cred', groupId: 'websocket-demo', nexusUrl: '44.209.72.171:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '0.0.1-SNAPSHOT'
-            }
-        }
-        
-        stage('Sonar qube') {
-            when {
-                expression {choice  == 3}
-            }
-            steps {
-                sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=chatapp -Dsonar.host.url=http://44.209.72.171:9000 -Dsonar.login=sqp_79cac47b2d73950e2f9dd1902458f4a24 }
+    }
+}
